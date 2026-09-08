@@ -46,6 +46,29 @@ public class Employee {
         this.registrationDate = LocalDateTime.now();
         this.isActive = true;
     }
+    public void updateAllFields(Employee newData) {
+        this.firstName = newData.getFirstName();
+        this.middleName = newData.getMiddleName();
+        this.paternalLastName = newData.getPaternalLastName();
+        this.maternalLastName = newData.getMaternalLastName();
+        this.age = newData.getAge();
+        this.gender = newData.getGender();
+        this.dateOfBirth = newData.getDateOfBirth();
+        this.position = newData.getPosition();
+        this.isActive = newData.getIsActive() != null ? newData.getIsActive() : this.isActive;
+    }
+
+    public void updateNonNullFields(Employee newData) {
+        if (newData.getFirstName() != null) this.firstName = newData.getFirstName();
+        if (newData.getMiddleName() != null) this.middleName = newData.getMiddleName();
+        if (newData.getPaternalLastName() != null) this.paternalLastName = newData.getPaternalLastName();
+        if (newData.getMaternalLastName() != null) this.maternalLastName = newData.getMaternalLastName();
+        if (newData.getAge() != null) this.age = newData.getAge();
+        if (newData.getGender() != null) this.gender = newData.getGender();
+        if (newData.getDateOfBirth() != null) this.dateOfBirth = newData.getDateOfBirth();
+        if (newData.getPosition() != null) this.position = newData.getPosition();
+        if (newData.getIsActive() != null) this.isActive = newData.getIsActive();
+    }
 
     // --- Getters ---
 
