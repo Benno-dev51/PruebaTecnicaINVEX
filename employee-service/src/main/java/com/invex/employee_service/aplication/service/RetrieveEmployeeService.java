@@ -4,6 +4,7 @@ import com.invex.employee_service.domain.exception.EmployeeNotFoundException;
 import com.invex.employee_service.domain.model.Employee;
 import com.invex.employee_service.domain.model.port.in.RetrieveEmployeeUseCase;
 import com.invex.employee_service.domain.model.port.out.EmployeeRepositoryPort;
+
 import java.util.List;
 
 public class RetrieveEmployeeService implements RetrieveEmployeeUseCase {
@@ -27,8 +28,8 @@ public class RetrieveEmployeeService implements RetrieveEmployeeUseCase {
 
     @Override
     public List<Employee> searchEmployeesByName(String name) {
-        if (name == null || name.trim().isEmpty()) {
-            return getAllEmployees();
+        if (name == null || name.isBlank()) {
+            return List.of();
         }
         return employeeRepositoryPort.findByPartialName(name.trim());
     }
