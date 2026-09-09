@@ -2,6 +2,7 @@ package com.invex.employee_service.infrastructure.adapter.out.persistence;
 
 
 import com.invex.employee_service.domain.model.Employee;
+import com.invex.employee_service.domain.model.port.out.EmployeeRepositoryPort;
 import com.invex.employee_service.infrastructure.adapter.out.persistence.entity.EmployeeEntity;
 import com.invex.employee_service.infrastructure.adapter.out.persistence.mapper.EmployeePersistenceMapper;
 import com.invex.employee_service.infrastructure.adapter.out.persistence.repository.SpringDataEmployeeRepository;

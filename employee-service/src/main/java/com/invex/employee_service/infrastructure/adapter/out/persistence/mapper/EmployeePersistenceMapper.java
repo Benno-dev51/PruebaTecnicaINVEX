@@ -1,5 +1,6 @@
 package com.invex.employee_service.infrastructure.adapter.out.persistence.mapper;
 
+import com.invex.employee_service.domain.model.Employee;
 import com.invex.employee_service.infrastructure.adapter.out.persistence.entity.EmployeeEntity;
 import org.springframework.stereotype.Component;
 
