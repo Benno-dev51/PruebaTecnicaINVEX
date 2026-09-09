@@ -1,91 +1,60 @@
 package com.invex.employee_service.domain.model;
 
 import org.junit.jupiter.api.Test;
-import java.time.LocalDate;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class EmployeeTest {
 
+    private final Clock fixedClock = Clock.fixed(Instant.parse("2026-09-09T10:00:00Z"), ZoneId.of("UTC"));
+
     @Test
     void shouldInitializeRegistrationCorrectly() {
-        Employee employee = Employee.builder()
-                .firstName("Carlos")
-                .build();
+        // Usamos el builder vacío que sí tienes
+        Employee employee = Employee.builder().build();
+        ReflectionTestUtils.setField(employee, "firstName", "Carlos");
 
-        employee.initializeRegistration();
+        employee.initializeRegistration(fixedClock);
 
         assertNotNull(employee.getRegistrationDate(), "Registration date should be set");
-        assertTrue(employee.getIsActive(), "Employee should be active upon registration");
+        assertTrue(employee.isActive(), "Employee should be active upon registration");
     }
 
     @Test
     void shouldMarkAsInactive() {
-        Employee employee = Employee.builder()
-                .firstName("Carlos")
-                .isActive(true)
-                .build();
-
+        Employee employee = Employee.builder().build();
+        employee.markAsActive();
         employee.markAsInactive();
 
-        assertFalse(employee.getIsActive(), "Employee should be marked as inactive");
-    }
-
-    @Test
-    void shouldUpdateOnlyNonNullFieldsForPartialUpdate() {
-        Employee existingEmployee = Employee.builder()
-                .firstName("Celia")
-                .paternalLastName("Cruz")
-                .age(30)
-                .build();
-
-        // testing partial payload by setting only the age
-        Employee updateData = Employee.builder()
-                .age(35)
-                .build();
-
-        existingEmployee.updateNonNullFields(updateData);
-
-        // CORRECCIÓN: Ahora validamos que sigan siendo Celia Cruz, ya que esos campos vinieron nulos en el update
-        assertEquals("Celia", existingEmployee.getFirstName(), "First name should not change if null is provided");
-        assertEquals("Cruz", existingEmployee.getPaternalLastName(), "Last name should not change if null is provided");
-        assertEquals(35, existingEmployee.getAge(), "Age should be updated to 35");
-    }
-
-    @Test
-    void shouldOverwriteAllFieldsForFullUpdate() {
-        Employee existingEmployee = Employee.builder()
-                .firstName("Pepe")
-                .paternalLastName("Pecas")
-                .age(30)
-                .dateOfBirth(LocalDate.of(1990, 1, 1))
-                .build();
-
-        // CORRECCIÓN: Los datos de actualización deben ser Benito Lopez para que el assert pase
-        Employee updateData = Employee.builder()
-                .firstName("Benito")
-                .paternalLastName("Lopez")
-                .age(28)
-                .dateOfBirth(LocalDate.of(1992, 5, 5))
-                .build();
-
-        existingEmployee.updateAllFields(updateData);
-
-        // CORRECCIÓN: Ahora el assert coincide con los datos que mandamos a actualizar
-        assertEquals("Benito", existingEmployee.getFirstName());
-        assertEquals("Lopez", existingEmployee.getPaternalLastName());
-        assertEquals(28, existingEmployee.getAge());
-        assertEquals(LocalDate.of(1992, 5, 5), existingEmployee.getDateOfBirth());
+        assertFalse(employee.isActive(), "Employee should be marked as inactive");
     }
 
     @Test
     void shouldMarkAsActive() {
-        Employee employee = Employee.builder()
-                .firstName("Carlos")
-                .isActive(false)
-                .build();
-
+        Employee employee = Employee.builder().build();
+        // Por defecto al construirse vacío, el boolean primitive es false
         employee.markAsActive();
 
-        assertTrue(employee.getIsActive(), "Employee should be marked as active");
+        assertTrue(employee.isActive(), "Employee should be marked as active");
+    }
+
+    @Test
+    void shouldUpdateProfileIgnoringNullValues() {
+        Employee existingEmployee = Employee.builder().build();
+        ReflectionTestUtils.setField(existingEmployee, "firstName", "Celia");
+        ReflectionTestUtils.setField(existingEmployee, "paternalLastName", "Cruz");
+        ReflectionTestUtils.setField(existingEmployee, "age", 30);
+
+        // Actualizamos solo la edad y el nombre, mandando null en lo demás
+        existingEmployee.updateProfile("Benito", null, null, null, 35, null, null, null);
+
+        assertEquals("Benito", existingEmployee.getFirstName());
+        assertEquals("Cruz", existingEmployee.getPaternalLastName(), "Paternal last name should not change");
+        assertEquals(35, existingEmployee.getAge(), "Age should be updated to 35");
     }
 }
