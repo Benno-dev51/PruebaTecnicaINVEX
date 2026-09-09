@@ -22,7 +22,9 @@ public class EmployeePersistenceMapper {
                 .dateOfBirth(entity.getDateOfBirth())
                 .position(entity.getPosition())
                 .registrationDate(entity.getRegistrationDate())
-                .isActive(entity.getIsActive())
+                // CORRECCIÓN: El builder del dominio ahora usa active()
+                // Usamos un check de null por si la base de datos devuelve un valor nulo para el Boolean
+                .active(entity.getIsActive() != null ? entity.getIsActive() : false)
                 .build();
     }
 
@@ -41,7 +43,8 @@ public class EmployeePersistenceMapper {
                 .dateOfBirth(domain.getDateOfBirth())
                 .position(domain.getPosition())
                 .registrationDate(domain.getRegistrationDate())
-                .isActive(domain.getIsActive())
+                // CORRECCIÓN: El getter del dominio ahora es isActive()
+                .isActive(domain.isActive())
                 .build();
     }
 }

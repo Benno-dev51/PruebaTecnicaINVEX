@@ -134,7 +134,6 @@ public class Employee {
     public static Builder builder() {
         return new Builder();
     }
-
     public static class Builder {
 
         private Long id;
@@ -149,7 +148,60 @@ public class Employee {
         private LocalDateTime registrationDate;
         private boolean active;
 
-        // ... builders ...
+        public Builder id(Long id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder firstName(String firstName) {
+            this.firstName = firstName;
+            return this;
+        }
+
+        public Builder middleName(String middleName) {
+            this.middleName = middleName;
+            return this;
+        }
+
+        public Builder paternalLastName(String paternalLastName) {
+            this.paternalLastName = paternalLastName;
+            return this;
+        }
+
+        public Builder maternalLastName(String maternalLastName) {
+            this.maternalLastName = maternalLastName;
+            return this;
+        }
+
+        public Builder age(Integer age) {
+            this.age = age;
+            return this;
+        }
+
+        public Builder gender(String gender) {
+            this.gender = gender;
+            return this;
+        }
+
+        public Builder dateOfBirth(LocalDate dateOfBirth) {
+            this.dateOfBirth = dateOfBirth;
+            return this;
+        }
+
+        public Builder position(String position) {
+            this.position = position;
+            return this;
+        }
+
+        public Builder registrationDate(LocalDateTime registrationDate) {
+            this.registrationDate = registrationDate;
+            return this;
+        }
+
+        public Builder active(boolean active) {
+            this.active = active;
+            return this;
+        }
 
         public Employee build() {
             return new Employee(this);
