@@ -1,6 +1,5 @@
 package com.invex.employee_service.infrastructure.adapter.out.persistence;
 
-
 import com.invex.employee_service.domain.model.Employee;
 import com.invex.employee_service.domain.model.port.out.EmployeeRepositoryPort;
 import com.invex.employee_service.infrastructure.adapter.out.persistence.entity.EmployeeEntity;
@@ -11,52 +10,66 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
-public class EmployeePersistenceAdapter implements EmployeeRepositoryPort {
+public class EmployeePersistenceAdapter
+        implements EmployeeRepositoryPort {
 
     private final SpringDataEmployeeRepository repository;
     private final EmployeePersistenceMapper mapper;
 
     @Override
     public Employee save(Employee employee) {
-        EmployeeEntity entity = mapper.toEntity(employee);
-        EmployeeEntity savedEntity = repository.save(entity);
+
+        EmployeeEntity entity =
+                mapper.toEntity(employee);
+
+        EmployeeEntity savedEntity =
+                repository.save(entity);
+
         return mapper.toDomain(savedEntity);
     }
 
     @Override
-    public List<Employee> saveAll(List<Employee> employees) {
-        List<EmployeeEntity> entities = employees.stream()
-                .map(mapper::toEntity)
-                .collect(Collectors.toList());
+    public List<Employee> saveAll(
+            List<Employee> employees) {
 
-        List<EmployeeEntity> savedEntities = repository.saveAll(entities);
+        List<EmployeeEntity> entities =
+                employees.stream()
+                        .map(mapper::toEntity)
+                        .toList();
 
-        return savedEntities.stream()
+        return repository.saveAll(entities)
+                .stream()
                 .map(mapper::toDomain)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     public Optional<Employee> findById(Long id) {
-        return repository.findById(id).map(mapper::toDomain);
+
+        return repository.findById(id)
+                .map(mapper::toDomain);
     }
 
     @Override
     public List<Employee> findAll() {
-        return repository.findAll().stream()
+
+        return repository.findAll()
+                .stream()
                 .map(mapper::toDomain)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
-    public List<Employee> findByPartialName(String name) {
-        return repository.findByPartialName(name).stream()
+    public List<Employee> findByPartialName(
+            String name) {
+
+        return repository.findByPartialName(name)
+                .stream()
                 .map(mapper::toDomain)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override

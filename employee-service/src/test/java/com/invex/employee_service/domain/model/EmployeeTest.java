@@ -1,60 +1,343 @@
 package com.invex.employee_service.domain.model;
 
+import com.invex.employee_service.domain.exception.BussinessValidationException;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class EmployeeTest {
 
-    private final Clock fixedClock = Clock.fixed(Instant.parse("2026-09-09T10:00:00Z"), ZoneId.of("UTC"));
+    private final Clock fixedClock = Clock.fixed(
+            Instant.parse("2026-09-09T10:00:00Z"),
+            ZoneId.of("UTC")
+    );
 
     @Test
-    void shouldInitializeRegistrationCorrectly() {
-        // Usamos el builder vacío que sí tienes
-        Employee employee = Employee.builder().build();
-        ReflectionTestUtils.setField(employee, "firstName", "Carlos");
+    void shouldCreateEmployeeCorrectly() {
 
-        employee.initializeRegistration(fixedClock);
+        Employee employee = Employee.create(
+                "Carlos",
+                null,
+                "Perez",
+                "Lopez",
+                31,
+                "M",
+                LocalDate.of(1995, 8, 15),
+                "Backend Developer",
+                fixedClock
+        );
 
-        assertNotNull(employee.getRegistrationDate(), "Registration date should be set");
-        assertTrue(employee.isActive(), "Employee should be active upon registration");
+        assertEquals("Carlos", employee.getFirstName());
+        assertEquals("Perez", employee.getPaternalLastName());
+        assertEquals("Lopez", employee.getMaternalLastName());
+        assertEquals(31, employee.getAge());
+        assertEquals("M", employee.getGender());
+        assertEquals(
+                LocalDate.of(1995, 8, 15),
+                employee.getDateOfBirth()
+        );
+        assertEquals(
+                "Backend Developer",
+                employee.getPosition()
+        );
+
+        assertNotNull(employee.getRegistrationDate());
+        assertTrue(employee.isActive());
     }
 
     @Test
-    void shouldMarkAsInactive() {
-        Employee employee = Employee.builder().build();
-        employee.markAsActive();
+    void shouldInitializeRegistrationDateUsingProvidedClock() {
+
+        Employee employee = Employee.create(
+                "Carlos",
+                null,
+                "Perez",
+                "Lopez",
+                31,
+                "M",
+                LocalDate.of(1995, 8, 15),
+                "Backend Developer",
+                fixedClock
+        );
+
+        LocalDateTime expectedRegistrationDate =
+                LocalDateTime.of(
+                        2026,
+                        9,
+                        9,
+                        10,
+                        0
+                );
+
+        assertEquals(
+                expectedRegistrationDate,
+                employee.getRegistrationDate()
+        );
+    }
+
+    @Test
+    void shouldCreateEmployeeAsActive() {
+
+        Employee employee = createValidEmployee();
+
+        assertTrue(employee.isActive());
+    }
+
+    @Test
+    void shouldMarkEmployeeAsInactive() {
+
+        Employee employee = createValidEmployee();
+
         employee.markAsInactive();
 
-        assertFalse(employee.isActive(), "Employee should be marked as inactive");
+        assertFalse(employee.isActive());
     }
 
     @Test
-    void shouldMarkAsActive() {
-        Employee employee = Employee.builder().build();
-        // Por defecto al construirse vacío, el boolean primitive es false
+    void shouldMarkEmployeeAsActive() {
+
+        Employee employee = createValidEmployee();
+
+        employee.markAsInactive();
+
+        assertFalse(employee.isActive());
+
         employee.markAsActive();
 
-        assertTrue(employee.isActive(), "Employee should be marked as active");
+        assertTrue(employee.isActive());
     }
 
     @Test
-    void shouldUpdateProfileIgnoringNullValues() {
-        Employee existingEmployee = Employee.builder().build();
-        ReflectionTestUtils.setField(existingEmployee, "firstName", "Celia");
-        ReflectionTestUtils.setField(existingEmployee, "paternalLastName", "Cruz");
-        ReflectionTestUtils.setField(existingEmployee, "age", 30);
+    void shouldUpdateOnlyProvidedFields() {
 
-        // Actualizamos solo la edad y el nombre, mandando null en lo demás
-        existingEmployee.updateProfile("Benito", null, null, null, 35, null, null, null);
+        Employee employee = createValidEmployee();
 
-        assertEquals("Benito", existingEmployee.getFirstName());
-        assertEquals("Cruz", existingEmployee.getPaternalLastName(), "Paternal last name should not change");
-        assertEquals(35, existingEmployee.getAge(), "Age should be updated to 35");
+        employee.updateProfile(
+                "Benito",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "Tech Lead",
+                fixedClock
+        );
+
+        assertEquals("Benito", employee.getFirstName());
+        assertEquals("Perez", employee.getPaternalLastName());
+        assertEquals("Lopez", employee.getMaternalLastName());
+        assertEquals(31, employee.getAge());
+        assertEquals("M", employee.getGender());
+        assertEquals(
+                LocalDate.of(1995, 8, 15),
+                employee.getDateOfBirth()
+        );
+        assertEquals("Tech Lead", employee.getPosition());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenFirstNameIsBlank() {
+
+        assertThrows(
+                BussinessValidationException.class,
+                () -> Employee.create(
+                        " ",
+                        null,
+                        "Perez",
+                        "Lopez",
+                        31,
+                        "M",
+                        LocalDate.of(1995, 8, 15),
+                        "Backend Developer",
+                        fixedClock
+                )
+        );
+    }
+
+    @Test
+    void shouldThrowExceptionWhenPaternalLastNameIsBlank() {
+
+        assertThrows(
+                BussinessValidationException.class,
+                () -> Employee.create(
+                        "Carlos",
+                        null,
+                        " ",
+                        "Lopez",
+                        31,
+                        "M",
+                        LocalDate.of(1995, 8, 15),
+                        "Backend Developer",
+                        fixedClock
+                )
+        );
+    }
+
+    @Test
+    void shouldThrowExceptionWhenMaternalLastNameIsBlank() {
+
+        assertThrows(
+                BussinessValidationException.class,
+                () -> Employee.create(
+                        "Carlos",
+                        null,
+                        "Perez",
+                        " ",
+                        31,
+                        "M",
+                        LocalDate.of(1995, 8, 15),
+                        "Backend Developer",
+                        fixedClock
+                )
+        );
+    }
+
+    @Test
+    void shouldThrowExceptionWhenEmployeeIsUnderAge() {
+
+        assertThrows(
+                BussinessValidationException.class,
+                () -> Employee.create(
+                        "Carlos",
+                        null,
+                        "Perez",
+                        "Lopez",
+                        17,
+                        "M",
+                        LocalDate.of(2009, 8, 15),
+                        "Backend Developer",
+                        fixedClock
+                )
+        );
+    }
+
+    @Test
+    void shouldThrowExceptionWhenGenderIsInvalid() {
+
+        assertThrows(
+                BussinessValidationException.class,
+                () -> Employee.create(
+                        "Carlos",
+                        null,
+                        "Perez",
+                        "Lopez",
+                        31,
+                        "X",
+                        LocalDate.of(1995, 8, 15),
+                        "Backend Developer",
+                        fixedClock
+                )
+        );
+    }
+
+    @Test
+    void shouldThrowExceptionWhenDateOfBirthIsInFuture() {
+
+        assertThrows(
+                BussinessValidationException.class,
+                () -> Employee.create(
+                        "Carlos",
+                        null,
+                        "Perez",
+                        "Lopez",
+                        31,
+                        "M",
+                        LocalDate.of(2030, 1, 1),
+                        "Backend Developer",
+                        fixedClock
+                )
+        );
+    }
+
+    @Test
+    void shouldThrowExceptionWhenAgeDoesNotMatchDateOfBirth() {
+
+        assertThrows(
+                BussinessValidationException.class,
+                () -> Employee.create(
+                        "Carlos",
+                        null,
+                        "Perez",
+                        "Lopez",
+                        40,
+                        "M",
+                        LocalDate.of(1995, 8, 15),
+                        "Backend Developer",
+                        fixedClock
+                )
+        );
+    }
+
+    @Test
+    void shouldThrowExceptionWhenPositionIsBlank() {
+
+        assertThrows(
+                BussinessValidationException.class,
+                () -> Employee.create(
+                        "Carlos",
+                        null,
+                        "Perez",
+                        "Lopez",
+                        31,
+                        "M",
+                        LocalDate.of(1995, 8, 15),
+                        " ",
+                        fixedClock
+                )
+        );
+    }
+
+    @Test
+    void shouldReconstituteExistingEmployee() {
+
+        LocalDateTime registrationDate =
+                LocalDateTime.of(
+                        2026,
+                        1,
+                        10,
+                        10,
+                        0
+                );
+
+        Employee employee = Employee.reconstitute(
+                10L,
+                "Carlos",
+                null,
+                "Perez",
+                "Lopez",
+                31,
+                "M",
+                LocalDate.of(1995, 8, 15),
+                "Backend Developer",
+                registrationDate,
+                false
+        );
+
+        assertEquals(10L, employee.getId());
+        assertEquals("Carlos", employee.getFirstName());
+        assertEquals(registrationDate, employee.getRegistrationDate());
+        assertFalse(employee.isActive());
+    }
+
+    private Employee createValidEmployee() {
+
+        return Employee.create(
+                "Carlos",
+                null,
+                "Perez",
+                "Lopez",
+                31,
+                "M",
+                LocalDate.of(1995, 8, 15),
+                "Backend Developer",
+                fixedClock
+        );
     }
 }

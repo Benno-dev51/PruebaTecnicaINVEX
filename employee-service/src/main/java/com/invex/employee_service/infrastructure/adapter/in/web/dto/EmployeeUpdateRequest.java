@@ -1,10 +1,8 @@
 package com.invex.employee_service.infrastructure.adapter.in.web.dto;
 
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -18,9 +16,8 @@ import java.time.LocalDate;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class EmployeeRequest {
+public class EmployeeUpdateRequest {
 
-    @NotBlank(message = "First name is mandatory")
     @Size(
             max = 50,
             message = "First name must not exceed 50 characters"
@@ -33,40 +30,33 @@ public class EmployeeRequest {
     )
     private String middleName;
 
-    @NotBlank(message = "Paternal last name is mandatory")
     @Size(
             max = 50,
             message = "Paternal last name must not exceed 50 characters"
     )
     private String paternalLastName;
 
-    @NotBlank(message = "Maternal last name is mandatory")
     @Size(
             max = 50,
             message = "Maternal last name must not exceed 50 characters"
     )
     private String maternalLastName;
 
-    @NotNull(message = "Age is mandatory")
     @Min(
             value = 18,
             message = "Employee must be at least 18 years old"
     )
     private Integer age;
 
-    @NotBlank(message = "Gender is mandatory")
     @Pattern(
             regexp = "^(M|F)$",
             message = "Gender must be 'M' or 'F'"
     )
     private String gender;
 
-    @NotNull(message = "Date of birth is mandatory")
-    @Past(message = "Date of birth must be in the past")
     @JsonFormat(pattern = "dd-MM-yyyy")
     private LocalDate dateOfBirth;
 
-    @NotBlank(message = "Position is mandatory")
     @Size(
             max = 100,
             message = "Position must not exceed 100 characters"
