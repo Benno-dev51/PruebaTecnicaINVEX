@@ -1,96 +1,341 @@
-package com.invex.employee_service.infrastructure.adapter.in.web;
+package com.invex.employee_service.infrastructure.adapter.in.web.controllers;
 
+import com.invex.employee_service.domain.exception.BussinessValidationException;
 import com.invex.employee_service.domain.model.Employee;
+import com.invex.employee_service.domain.model.port.in.CreateEmployeeCommand;
 import com.invex.employee_service.domain.model.port.in.ManageEmployeeUseCase;
 import com.invex.employee_service.domain.model.port.in.RetrieveEmployeeUseCase;
+import com.invex.employee_service.domain.model.port.in.UpdateEmployeeCommand;
 import com.invex.employee_service.infrastructure.adapter.in.web.dto.EmployeeRequest;
+import com.invex.employee_service.infrastructure.adapter.in.web.dto.EmployeeUpdateRequest;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/employees")
 @RequiredArgsConstructor
+@Tag(
+        name = "Employees",
+        description = "Operations for managing employees"
+)
 public class EmployeeController {
 
     private final ManageEmployeeUseCase manageEmployeeUseCase;
     private final RetrieveEmployeeUseCase retrieveEmployeeUseCase;
 
-    // --- GET /employees (Todos) ---
+    @Operation(
+            summary = "Get all employees",
+            description = "Returns all employees registered in the system"
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "Employees retrieved successfully",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    array = @ArraySchema(
+                            schema = @Schema(
+                                    implementation = Employee.class
+                            )
+                    )
+            )
+    )
     @GetMapping
     public ResponseEntity<List<Employee>> getAllEmployees() {
-        return ResponseEntity.ok(retrieveEmployeeUseCase.getAllEmployees());
+        return ResponseEntity.ok(
+                retrieveEmployeeUseCase.getAllEmployees()
+        );
     }
 
-    // --- GET /employees/search?name={name} (Búsqueda por nombre) ---
+    @Operation(
+            summary = "Search employees by name",
+            description = """
+                    Searches employees by a partial name match.
+                    The search may include first name, middle name,
+                    paternal last name or maternal last name.
+                    """
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "Search completed successfully",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    array = @ArraySchema(
+                            schema = @Schema(
+                                    implementation = Employee.class
+                            )
+                    )
+            )
+    )
+    @ApiResponse(
+            responseCode = "400",
+            description = "Invalid search parameter"
+    )
     @GetMapping("/search")
-    public ResponseEntity<List<Employee>> searchEmployees(@RequestParam String name) {
-        return ResponseEntity.ok(retrieveEmployeeUseCase.searchEmployeesByName(name));
+    public ResponseEntity<List<Employee>> searchEmployees(
+            @Parameter(
+                    description = "Partial employee name to search",
+                    example = "Juan"
+            )
+            @RequestParam String name) {
+
+        return ResponseEntity.ok(
+                retrieveEmployeeUseCase.searchEmployeesByName(name)
+        );
     }
 
-    // --- GET /employees/{id} (Por ID) ---
+    @Operation(
+            summary = "Get employee by ID",
+            description = "Returns an employee using its unique identifier"
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "Employee found",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(
+                            implementation = Employee.class
+                    )
+            )
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Employee not found"
+    )
     @GetMapping("/{id}")
-    public ResponseEntity<Employee> getEmployeeById(@PathVariable Long id) {
-        return ResponseEntity.ok(retrieveEmployeeUseCase.getEmployeeById(id));
+    public ResponseEntity<Employee> getEmployeeById(
+            @Parameter(
+                    description = "Employee unique identifier",
+                    example = "1"
+            )
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(
+                retrieveEmployeeUseCase.getEmployeeById(id)
+        );
     }
 
-    // --- POST /employees (Uno o varios en una petición) ---
+    @Operation(
+            summary = "Create employee",
+            description = "Creates a single employee"
+    )
+    @ApiResponse(
+            responseCode = "201",
+            description = "Employee created successfully",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(
+                            implementation = Employee.class
+                    )
+            )
+    )
+    @ApiResponse(
+            responseCode = "400",
+            description = "Invalid employee data"
+    )
     @PostMapping
-    @Transactional
-    public ResponseEntity<?> createEmployees(@RequestBody List<EmployeeRequest> requests) {
-        if (requests == null || requests.isEmpty()) {
-            return ResponseEntity.badRequest().body("The request body cannot be empty");
-        }
+    public ResponseEntity<Employee> createEmployee(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Employee data to create",
+                    required = true,
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(
+                                    implementation = EmployeeRequest.class
+                            )
+                    )
+            )
+            @Valid
+            @RequestBody EmployeeRequest request) {
 
-        if (requests.size() == 1) {
-            // Si viene 1 solo empleado, usamos el caso de uso individual
-            Employee employee = buildEmployeeFromRequest(requests.get(0));
-            Employee savedEmployee = manageEmployeeUseCase.createEmployee(employee);
-            return new ResponseEntity<>(savedEmployee, HttpStatus.CREATED);
-        } else {
-            // Si vienen varios, mapeamos toda la lista y usamos el bulk
-            List<Employee> employeesToSave = requests.stream()
-                    .map(this::buildEmployeeFromRequest)
-                    .collect(Collectors.toList());
-            List<Employee> savedEmployees = manageEmployeeUseCase.createEmployeesBulk(employeesToSave);
-            return new ResponseEntity<>(savedEmployees, HttpStatus.CREATED);
-        }
+        CreateEmployeeCommand command =
+                toCreateCommand(request);
+
+        Employee employee =
+                manageEmployeeUseCase.createEmployee(command);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(employee);
     }
 
-    // --- PUT /employees/{id} (Actualiza todos o algunos campos) ---
+    @Operation(
+            summary = "Create multiple employees",
+            description = "Creates multiple employees in a single request"
+    )
+    @ApiResponse(
+            responseCode = "201",
+            description = "Employees created successfully",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    array = @ArraySchema(
+                            schema = @Schema(
+                                    implementation = Employee.class
+                            )
+                    )
+            )
+    )
+    @ApiResponse(
+            responseCode = "400",
+            description = "Invalid employee data or empty employee list"
+    )
+    @PostMapping("/bulk")
+    public ResponseEntity<List<Employee>> createEmployeesBulk(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "List of employees to create",
+                    required = true,
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            array = @ArraySchema(
+                                    schema = @Schema(
+                                            implementation = EmployeeRequest.class
+                                    )
+                            )
+                    )
+            )
+            @RequestBody List<@Valid EmployeeRequest> requests) {
+
+        if (requests.isEmpty()) {
+            throw new BussinessValidationException(
+                    "The employee list cannot be empty"
+            );
+        }
+
+        List<CreateEmployeeCommand> commands =
+                requests.stream()
+                        .map(this::toCreateCommand)
+                        .toList();
+
+        List<Employee> employees =
+                manageEmployeeUseCase.createEmployeesBulk(commands);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(employees);
+    }
+
+    @Operation(
+            summary = "Update employee",
+            description = """
+                    Updates one or more fields of an existing employee.
+                    Fields not included in the request remain unchanged.
+                    """
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "Employee updated successfully",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(
+                            implementation = Employee.class
+                    )
+            )
+    )
+    @ApiResponse(
+            responseCode = "400",
+            description = "Invalid employee data"
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Employee not found"
+    )
     @PutMapping("/{id}")
-    @Transactional
-    public ResponseEntity<Employee> updateEmployee(@PathVariable Long id, @RequestBody EmployeeRequest request) {
-        Employee employeeData = buildEmployeeFromRequest(request);
-        // Pasamos true para isPartialUpdate, además nuestro dominio ya ignora los valores null por diseño
-        Employee updatedEmployee = manageEmployeeUseCase.updateEmployee(id, employeeData, true);
-        return ResponseEntity.ok(updatedEmployee);
+    public ResponseEntity<Employee> updateEmployee(
+            @Parameter(
+                    description = "Employee unique identifier",
+                    example = "1"
+            )
+            @PathVariable Long id,
+
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Fields to update",
+                    required = true,
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(
+                                    implementation = EmployeeUpdateRequest.class
+                            )
+                    )
+            )
+            @Valid
+            @RequestBody EmployeeUpdateRequest request) {
+
+        UpdateEmployeeCommand command =
+                toUpdateCommand(request);
+
+        Employee employee =
+                manageEmployeeUseCase.updateEmployee(
+                        id,
+                        command
+                );
+
+        return ResponseEntity.ok(employee);
     }
 
-    // --- DELETE /employees/{id} ---
+    @Operation(
+            summary = "Delete employee",
+            description = "Deletes an employee using its unique identifier"
+    )
+    @ApiResponse(
+            responseCode = "204",
+            description = "Employee deleted successfully"
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Employee not found"
+    )
     @DeleteMapping("/{id}")
-    @Transactional
-    public ResponseEntity<Void> deleteEmployee(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteEmployee(
+            @Parameter(
+                    description = "Employee unique identifier",
+                    example = "1"
+            )
+            @PathVariable Long id) {
+
         manageEmployeeUseCase.deleteEmployee(id);
+
         return ResponseEntity.noContent().build();
     }
 
-    // --- Método Auxiliar ---
-    private Employee buildEmployeeFromRequest(EmployeeRequest request) {
-        return Employee.builder()
-                .firstName(request.getFirstName())
-                .middleName(request.getMiddleName())
-                .paternalLastName(request.getPaternalLastName())
-                .maternalLastName(request.getMaternalLastName())
-                .age(request.getAge())
-                .gender(request.getGender())
-                .dateOfBirth(request.getDateOfBirth())
-                .position(request.getPosition())
-                .build();
+    private CreateEmployeeCommand toCreateCommand(
+            EmployeeRequest request) {
+
+        return new CreateEmployeeCommand(
+                request.getFirstName(),
+                request.getMiddleName(),
+                request.getPaternalLastName(),
+                request.getMaternalLastName(),
+                request.getAge(),
+                request.getGender(),
+                request.getDateOfBirth(),
+                request.getPosition()
+        );
+    }
+
+    private UpdateEmployeeCommand toUpdateCommand(
+            EmployeeUpdateRequest request) {
+
+        return new UpdateEmployeeCommand(
+                request.getFirstName(),
+                request.getMiddleName(),
+                request.getPaternalLastName(),
+                request.getMaternalLastName(),
+                request.getAge(),
+                request.getGender(),
+                request.getDateOfBirth(),
+                request.getPosition()
+        );
     }
 }

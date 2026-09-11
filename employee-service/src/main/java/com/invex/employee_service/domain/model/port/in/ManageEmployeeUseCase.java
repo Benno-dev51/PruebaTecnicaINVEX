@@ -5,8 +5,19 @@ import com.invex.employee_service.domain.model.Employee;
 import java.util.List;
 
 public interface ManageEmployeeUseCase {
-    Employee createEmployee(Employee employee);
-    List<Employee> createEmployeesBulk(List<Employee> employees);
-    Employee updateEmployee(Long id, Employee employeeData, boolean isPartialUpdate);
+
+    Employee createEmployee(
+            CreateEmployeeCommand command
+    );
+
+    List<Employee> createEmployeesBulk(
+            List<CreateEmployeeCommand> commands
+    );
+
+    Employee updateEmployee(
+            Long id,
+            UpdateEmployeeCommand command
+    );
+
     void deleteEmployee(Long id);
 }
